@@ -194,7 +194,7 @@
                             
                             // Attendre un peu pour éviter le rate limiting de Discord
                             if (i < count - 1) {
-                                await new Promise(resolve => setTimeout(resolve, 500));
+                                await new Promise(resolve => setTimeout(resolve, 1));
                             }
                         } catch (error) {
                             console.error('Erreur:', error);
