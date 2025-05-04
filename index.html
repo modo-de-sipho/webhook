@@ -3,136 +3,611 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Envoyer au Webhook Discord</title>
+    <title>Discord Webhook Sender</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <style>
+        :root {
+            --discord-color: #5865F2;
+            --discord-dark: #404EED;
+            --discord-bg: #36393f;
+            --discord-light-bg: #40444b;
+            --discord-lighter-bg: #4f545c;
+            --text-light: #dcddde;
+            --text-normal: #ffffff;
+            --text-muted: #72767d;
+            --success-color: #57F287;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+        
+        @font-face {
+            font-family: 'Whitney';
+            src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/webfonts/fa-regular-400.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f0f0f0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             margin: 0;
             padding: 20px 0;
+            color: var(--text-light);
         }
+        
         .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 400px;
+            background-color: var(--discord-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            width: 450px;
             max-width: 95%;
+            position: relative;
+            overflow: hidden;
         }
+        
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--discord-color), #738ADB, var(--discord-dark));
+            z-index: 2;
+        }
+        
         h1 {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            color: var(--text-normal);
+            font-size: 26px;
+            font-weight: 700;
+            position: relative;
+            padding-bottom: 10px;
         }
+        
+        h1::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background-color: var(--discord-color);
+            border-radius: 3px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
         label {
             display: block;
-            margin-top: 10px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-normal);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
         }
-        input, button, textarea, select {
+        
+        label i {
+            margin-right: 8px;
+            color: var(--discord-color);
+        }
+        
+        input, textarea, button, select {
             width: 100%;
-            padding: 10px;
-            margin: 5px 0 15px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            box-sizing: border-box;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+            background-color: var(--discord-light-bg);
+            color: var(--text-normal);
+            font-size: 15px;
+            transition: all 0.3s ease;
         }
+        
         textarea {
-            min-height: 100px;
+            min-height: 120px;
             resize: vertical;
+            line-height: 1.5;
         }
-        button {
-            background-color: #4CAF50;
-            color: white;
+        
+        input:focus, textarea:focus {
+            box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.6);
+        }
+        
+        input[type="file"] {
+            padding: 10px;
+            background-color: transparent;
+            border: 2px dashed var(--discord-lighter-bg);
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            position: relative;
+            overflow: hidden;
         }
-        button:hover {
-            background-color: #45a049;
+        
+        .file-input-container {
+            position: relative;
+            margin-bottom: 15px;
         }
+        
+        .file-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--discord-light-bg);
+            border-radius: 8px;
+            padding: 12px 15px;
+            cursor: pointer;
+            border: 2px dashed var(--discord-lighter-bg);
+            transition: all 0.3s ease;
+        }
+        
+        .file-label:hover {
+            border-color: var(--discord-color);
+            background-color: rgba(88, 101, 242, 0.1);
+        }
+        
+        .file-label i {
+            margin-right: 8px;
+            font-size: 18px;
+            color: var(--discord-color);
+        }
+        
+        .file-label span {
+            font-weight: 500;
+        }
+        
+        input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .count-input {
+            display: flex;
+            align-items: center;
+            background-color: var(--discord-light-bg);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .count-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--discord-lighter-bg);
+            border: none;
+            color: var(--text-normal);
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .count-btn:hover {
+            background-color: var(--discord-color);
+        }
+        
+        .count-input input {
+            flex: 1;
+            text-align: center;
+            border-radius: 0;
+            border-left: 1px solid var(--discord-bg);
+            border-right: 1px solid var(--discord-bg);
+            padding: 10px 5px;
+        }
+        
+        button.send-btn {
+            background: linear-gradient(90deg, var(--discord-color), var(--discord-dark));
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        button.send-btn i {
+            margin-right: 8px;
+            font-size: 18px;
+        }
+        
+        button.send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(88, 101, 242, 0.4);
+        }
+        
+        button.send-btn:active {
+            transform: translateY(0);
+        }
+        
+        button.send-btn::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: scale(0) translate(-50%, -50%);
+            transform-origin: top left;
+            opacity: 0;
+        }
+        
+        button.send-btn:active::after {
+            animation: ripple 0.6s ease-out;
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(0) translate(-50%, -50%);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(6) translate(-50%, -50%);
+                opacity: 0;
+            }
+        }
+        
         .image-preview {
-            margin-top: 10px;
+            margin-top: 15px;
             text-align: center;
             display: none;
+            position: relative;
         }
+        
         .image-preview img {
             max-width: 100%;
             max-height: 200px;
-            margin-top: 10px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
         }
+        
+        .image-preview:hover img {
+            transform: scale(1.02);
+        }
+        
+        .remove-img {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background-color: #ff4040;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+        
+        .remove-img:hover {
+            background-color: #e53935;
+            transform: scale(1.1);
+        }
+        
         .progress {
-            margin-top: 10px;
+            margin-top: 20px;
             display: none;
         }
+        
         .progress-bar {
-            height: 20px;
-            background-color: #e0e0e0;
+            height: 8px;
+            background-color: var(--discord-light-bg);
             border-radius: 10px;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             overflow: hidden;
+            position: relative;
         }
+        
         .progress-bar-fill {
             height: 100%;
-            background-color: #4CAF50;
+            background: linear-gradient(90deg, var(--discord-color), var(--success-color));
             width: 0%;
-            transition: width 0.3s;
+            transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+            overflow: hidden;
         }
+        
+        .progress-bar-fill::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                transparent 100%
+            );
+            animation: shine 1.5s infinite;
+        }
+        
+        @keyframes shine {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(100%);
+            }
+        }
+        
         .progress-text {
             text-align: center;
             font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .progress-text i {
+            color: var(--success-color);
+            margin-right: 5px;
+        }
+        
+        .success-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .success-box {
+            background-color: var(--discord-bg);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            transform: scale(0.8);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .success-icon {
+            font-size: 60px;
+            color: var(--success-color);
+            margin-bottom: 20px;
+        }
+        
+        .success-text {
+            color: var(--text-normal);
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .success-subtext {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        .show-success {
+            opacity: 1;
+        }
+        
+        .show-success .success-box {
+            transform: scale(1);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--discord-bg);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--discord-lighter-bg);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--discord-color);
+        }
+        
+        /* Responsivity */
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+            
+            input, textarea, button {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+            
+            .success-icon {
+                font-size: 50px;
+            }
+            
+            .success-text {
+                font-size: 18px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Envoyer un message</h1>
+        <h1>Discord Message Sender</h1>
         
-        <label for="message">Message :</label>
-        <textarea id="message" placeholder="Entrez votre message"></textarea>
-        
-        <label for="image">Image (optionnel) :</label>
-        <input type="file" id="image" accept="image/*">
-        <div class="image-preview" id="imagePreview">
-            <img id="previewImg" src="#" alt="Aperçu de l'image">
+        <div class="input-group">
+            <label for="message"><i class="fas fa-comment-alt"></i> Message</label>
+            <textarea id="message" placeholder="Entrez votre message..."></textarea>
         </div>
         
-        <label for="count">Nombre d'envois :</label>
-        <input type="number" id="count" value="1" min="1" max="20">
+        <div class="input-group">
+            <label><i class="fas fa-image"></i> Image (optionnel)</label>
+            <div class="file-input-container">
+                <label class="file-label">
+                    <i class="fas fa-upload"></i>
+                    <span id="file-name">Choisir une image</span>
+                    <input type="file" id="image" accept="image/*">
+                </label>
+            </div>
+            <div class="image-preview" id="imagePreview">
+                <img id="previewImg" src="#" alt="Aperçu de l'image">
+                <div class="remove-img" id="removeImg"><i class="fas fa-times"></i></div>
+            </div>
+        </div>
         
-        <button onclick="sendMessages()">Envoyer</button>
+        <div class="input-group">
+            <label for="count"><i class="fas fa-repeat"></i> Nombre d'envois</label>
+            <div class="count-input">
+                <button class="count-btn" id="decrementBtn">-</button>
+                <input type="number" id="count" value="1" min="1" max="100">
+                <button class="count-btn" id="incrementBtn">+</button>
+            </div>
+        </div>
+        
+        <button class="send-btn" onclick="sendMessages()">
+            <i class="fas fa-paper-plane"></i> Envoyer
+        </button>
         
         <div class="progress" id="progressContainer">
             <div class="progress-bar">
                 <div class="progress-bar-fill" id="progressBar"></div>
             </div>
-            <div class="progress-text" id="progressText">0/0 messages envoyés</div>
+            <div class="progress-text" id="progressText">
+                <span><i class="fas fa-sync-alt fa-spin"></i> Traitement en cours...</span>
+                <span>0/0</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="success-animation" id="successAnimation">
+        <div class="success-box">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="success-text">Envoi réussi !</div>
+            <div class="success-subtext" id="successSubtext">5 messages ont été envoyés avec succès</div>
         </div>
     </div>
     
     <script>
-        // Afficher l'aperçu de l'image sélectionnée
-        document.getElementById('image').addEventListener('change', function(event) {
+        // Afficher l'animation de succès
+        function showSuccessAnimation(count) {
+            const successAnimation = document.getElementById('successAnimation');
+            const successSubtext = document.getElementById('successSubtext');
+            
+            successSubtext.textContent = `${count} message${count > 1 ? 's ont' : ' a'} été envoyé${count > 1 ? 's' : ''} avec succès`;
+            successAnimation.classList.add('show-success');
+            
+            setTimeout(() => {
+                successAnimation.classList.remove('show-success');
+            }, 3000);
+        }
+
+        // Gestion des boutons + et -
+        document.getElementById('decrementBtn').onclick = function() {
+            let countInput = document.getElementById('count');
+            let currentValue = parseInt(countInput.value);
+            if (currentValue > 1) {
+                countInput.value = currentValue - 1;
+            }
+        };
+        
+        document.getElementById('incrementBtn').onclick = function() {
+            let countInput = document.getElementById('count');
+            let currentValue = parseInt(countInput.value);
+            if (currentValue < 100) {
+                countInput.value = currentValue + 1;
+            }
+        };
+        
+        // Validation du champ de nombre
+        document.getElementById('count').oninput = function() {
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+                this.value = 1;
+            } else if (value > 100) {
+                this.value = 100;
+            }
+        };
+        
+        // Gestion du nom de fichier
+        document.getElementById('image').onchange = function(event) {
+            const fileName = document.getElementById('file-name');
             const imagePreview = document.getElementById('imagePreview');
             const previewImg = document.getElementById('previewImg');
             
             if (event.target.files && event.target.files[0]) {
-                const reader = new FileReader();
+                const file = event.target.files[0];
+                fileName.textContent = file.name.length > 20 ? 
+                    file.name.substring(0, 17) + '...' : file.name;
                 
+                const reader = new FileReader();
                 reader.onload = function(e) {
                     previewImg.src = e.target.result;
                     imagePreview.style.display = 'block';
                 }
-                
-                reader.readAsDataURL(event.target.files[0]);
+                reader.readAsDataURL(file);
             } else {
+                fileName.textContent = 'Choisir une image';
                 imagePreview.style.display = 'none';
             }
-        });
+        };
+        
+        // Bouton de suppression d'image
+        document.getElementById('removeImg').onclick = function() {
+            document.getElementById('image').value = '';
+            document.getElementById('file-name').textContent = 'Choisir une image';
+            document.getElementById('imagePreview').style.display = 'none';
+        };
 
         // Fonction pour envoyer les messages
         async function sendMessages() {
@@ -142,16 +617,28 @@
             const imageFile = document.getElementById("image").files[0];
             
             // Validation des entrées
-            if (!message) {
-                alert("Veuillez entrer un message !");
+            if (!message.trim()) {
+                // Animation d'erreur pour le champ de message
+                const messageField = document.getElementById("message");
+                messageField.style.boxShadow = "0 0 0 2px rgba(255, 0, 0, 0.6)";
+                messageField.focus();
+                setTimeout(() => {
+                    messageField.style.boxShadow = "";
+                }, 2000);
                 return;
             }
             
             if (isNaN(count) || count < 1) {
-                alert("Veuillez entrer un nombre valide d'envois (minimum 1)");
+                const countField = document.getElementById("count");
+                countField.style.boxShadow = "0 0 0 2px rgba(255, 0, 0, 0.6)";
+                countField.focus();
+                setTimeout(() => {
+                    countField.style.boxShadow = "";
+                }, 2000);
                 return;
             }
             
+            // Webhook URL
             const webhookUrl = 'https://discord.com/api/webhooks/1368134567759970304/oLfo1NNUAYTFMwPrgusrAyKt5CaXsuSv2cYTA46j2iASAFjt2_gAgu0EySuA7GrZVzDU';
             
             // Afficher la barre de progression
@@ -159,7 +646,7 @@
             const progressBar = document.getElementById("progressBar");
             const progressText = document.getElementById("progressText");
             progressContainer.style.display = 'block';
-            progressText.textContent = `0/${count} messages envoyés`;
+            document.querySelector(".progress-text span:last-child").textContent = `0/${count}`;
             progressBar.style.width = '0%';
             
             let successCount = 0;
@@ -194,7 +681,7 @@
                             
                             // Attendre un peu pour éviter le rate limiting de Discord
                             if (i < count - 1) {
-                                await new Promise(resolve => setTimeout(resolve, 1));
+                                await new Promise(resolve => setTimeout(resolve, 500));
                             }
                         } catch (error) {
                             console.error('Erreur:', error);
@@ -202,7 +689,6 @@
                     }
                 } catch (error) {
                     console.error('Erreur lors du traitement de l\'image:', error);
-                    alert("Erreur lors du traitement de l'image.");
                     progressContainer.style.display = 'none';
                     return;
                 }
@@ -235,26 +721,28 @@
                 }
             }
             
+            // Cacher la barre de progression
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+            }, 1000);
+            
             // Afficher le résultat final
-            if (successCount === count) {
-                alert(`${successCount} message(s) envoyé(s) avec succès !`);
+            if (successCount > 0) {
+                showSuccessAnimation(successCount);
                 document.getElementById("message").value = ""; // Effacer le message
                 document.getElementById("image").value = ""; // Effacer l'image
+                document.getElementById("file-name").textContent = "Choisir une image"; // Réinitialiser le texte
                 document.getElementById("imagePreview").style.display = 'none'; // Cacher l'aperçu
-            } else {
-                alert(`${successCount} sur ${count} message(s) envoyé(s). Certains envois ont échoué.`);
             }
         }
         
         // Mettre à jour la barre de progression
         function updateProgress(current, total) {
             const progressBar = document.getElementById("progressBar");
-            const progressText = document.getElementById("progressText");
             const percentage = (current / total) * 100;
             
             progressBar.style.width = percentage + '%';
-            progressText.textContent = `${current}/${total} messages envoyés`;
+            document.querySelector(".progress-text span:last-child").textContent = `${current}/${total}`;
         }
-    </script>
 </body>
 </html>
