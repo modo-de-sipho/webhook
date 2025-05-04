@@ -549,7 +549,7 @@
             
             setTimeout(() => {
                 successAnimation.classList.remove('show-success');
-            }, 3000);
+            }, 1000);
         }
 
         // Gestion des boutons + et -
@@ -681,7 +681,7 @@
                             
                             // Attendre un peu pour éviter le rate limiting de Discord
                             if (i < count - 1) {
-                                await new Promise(resolve => setTimeout(resolve, 500));
+                                await new Promise(resolve => setTimeout(resolve, 100));
                             }
                         } catch (error) {
                             console.error('Erreur:', error);
