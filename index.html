@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Webhook Sender</title>
+  <title>Webhook Sender via Python</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -39,8 +39,6 @@
   <button onclick="send()">Envoyer</button>
 
   <script>
-    const webhookURL = "https://discord.com/api/webhooks/1368134567759970304/oLfo1NNUAYTFMwPrgusrAyKt5CaXsuSv2cYTA46j2iASAFjt2_gAgu0EySuA7GrZVzDU";
-
     async function send() {
       const msg = document.getElementById("message").value;
       const count = parseInt(document.getElementById("count").value);
@@ -50,18 +48,26 @@
 
       for (let i = 0; i < count; i++) {
         try {
-          await fetch(webhookURL, {
-            method: "POST",
+          const response = await fetch('http://localhost:5000/send_message', {
+            method: 'POST',
             headers: {
-              "Content-Type": "application/json"
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              content: msg
+              message: msg
             })
           });
+          
+          const data = await response.json();
+          if (response.ok) {
+            console.log(data.success);
+          } else {
+            console.error(data.error);
+            break;
+          }
         } catch (e) {
           console.error("Erreur lors de l'envoi :", e);
-          alert("Erreur réseau ou CORS ⚠️");
+          alert("Erreur réseau ⚠️");
           break;
         }
       }
