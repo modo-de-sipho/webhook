@@ -10,79 +10,251 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             background-color: #f0f0f0;
             margin: 0;
+            padding: 20px 0;
         }
         .container {
             background-color: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 300px;
+            width: 400px;
+            max-width: 95%;
         }
         h1 {
             text-align: center;
+            margin-bottom: 20px;
         }
-        input, button {
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input, button, textarea, select {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
+            margin: 5px 0 15px;
             border-radius: 5px;
             border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
         }
         button {
             background-color: #4CAF50;
             color: white;
             cursor: pointer;
+            font-weight: bold;
         }
         button:hover {
             background-color: #45a049;
         }
+        .image-preview {
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+        .image-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .progress {
+            margin-top: 10px;
+            display: none;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 5px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .progress-text {
+            text-align: center;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h1>Envoyer un message</h1>
-        <input type="text" id="message" placeholder="Entrez votre message">
-        <button onclick="sendMessage()">Envoyer</button>
+        
+        <label for="message">Message :</label>
+        <textarea id="message" placeholder="Entrez votre message"></textarea>
+        
+        <label for="image">Image (optionnel) :</label>
+        <input type="file" id="image" accept="image/*">
+        <div class="image-preview" id="imagePreview">
+            <img id="previewImg" src="#" alt="Aperçu de l'image">
+        </div>
+        
+        <label for="count">Nombre d'envois :</label>
+        <input type="number" id="count" value="1" min="1" max="20">
+        
+        <button onclick="sendMessages()">Envoyer</button>
+        
+        <div class="progress" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">0/0 messages envoyés</div>
+        </div>
     </div>
-
+    
     <script>
-        function sendMessage() {
+        // Afficher l'aperçu de l'image sélectionnée
+        document.getElementById('image').addEventListener('change', function(event) {
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            
+            if (event.target.files && event.target.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(event.target.files[0]);
+            } else {
+                imagePreview.style.display = 'none';
+            }
+        });
+
+        // Fonction pour envoyer les messages
+        async function sendMessages() {
             const message = document.getElementById("message").value;
+            const countInput = document.getElementById("count");
+            const count = parseInt(countInput.value);
+            const imageFile = document.getElementById("image").files[0];
+            
+            // Validation des entrées
             if (!message) {
                 alert("Veuillez entrer un message !");
                 return;
             }
-
+            
+            if (isNaN(count) || count < 1) {
+                alert("Veuillez entrer un nombre valide d'envois (minimum 1)");
+                return;
+            }
+            
             const webhookUrl = 'https://discord.com/api/webhooks/1368134567759970304/oLfo1NNUAYTFMwPrgusrAyKt5CaXsuSv2cYTA46j2iASAFjt2_gAgu0EySuA7GrZVzDU';
-            const payload = {
+            
+            // Afficher la barre de progression
+            const progressContainer = document.getElementById("progressContainer");
+            const progressBar = document.getElementById("progressBar");
+            const progressText = document.getElementById("progressText");
+            progressContainer.style.display = 'block';
+            progressText.textContent = `0/${count} messages envoyés`;
+            progressBar.style.width = '0%';
+            
+            let successCount = 0;
+            
+            // Créer le payload de base
+            let payload = {
                 content: message
             };
-
-            fetch(webhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert("Message envoyé !");
-                    document.getElementById("message").value = ""; // Clear input
-                } else {
-                    alert("Erreur lors de l'envoi du message.");
+            
+            // Si une image est sélectionnée
+            if (imageFile) {
+                try {
+                    // Convertir l'image en format compatible avec Discord
+                    const formData = new FormData();
+                    formData.append('file', imageFile);
+                    formData.append('payload_json', JSON.stringify({content: message}));
+                    
+                    // Envoyer les messages avec l'image
+                    for (let i = 0; i < count; i++) {
+                        try {
+                            const response = await fetch(webhookUrl, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            
+                            if (response.ok) {
+                                successCount++;
+                                updateProgress(successCount, count);
+                            } else {
+                                console.error('Erreur:', response.statusText);
+                            }
+                            
+                            // Attendre un peu pour éviter le rate limiting de Discord
+                            if (i < count - 1) {
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                            }
+                        } catch (error) {
+                            console.error('Erreur:', error);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du traitement de l\'image:', error);
+                    alert("Erreur lors du traitement de l'image.");
+                    progressContainer.style.display = 'none';
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error('Erreur:', error);
-                alert("Erreur lors de l'envoi du message.");
-            });
+            } else {
+                // Envoyer les messages sans image
+                for (let i = 0; i < count; i++) {
+                    try {
+                        const response = await fetch(webhookUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        
+                        if (response.ok) {
+                            successCount++;
+                            updateProgress(successCount, count);
+                        } else {
+                            console.error('Erreur:', response.statusText);
+                        }
+                        
+                        // Attendre un peu pour éviter le rate limiting de Discord
+                        if (i < count - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                    } catch (error) {
+                        console.error('Erreur:', error);
+                    }
+                }
+            }
+            
+            // Afficher le résultat final
+            if (successCount === count) {
+                alert(`${successCount} message(s) envoyé(s) avec succès !`);
+                document.getElementById("message").value = ""; // Effacer le message
+                document.getElementById("image").value = ""; // Effacer l'image
+                document.getElementById("imagePreview").style.display = 'none'; // Cacher l'aperçu
+            } else {
+                alert(`${successCount} sur ${count} message(s) envoyé(s). Certains envois ont échoué.`);
+            }
+        }
+        
+        // Mettre à jour la barre de progression
+        function updateProgress(current, total) {
+            const progressBar = document.getElementById("progressBar");
+            const progressText = document.getElementById("progressText");
+            const percentage = (current / total) * 100;
+            
+            progressBar.style.width = percentage + '%';
+            progressText.textContent = `${current}/${total} messages envoyés`;
         }
     </script>
-
 </body>
 </html>
