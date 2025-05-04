@@ -3,138 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Envoyer une Image au Webhook Discord</title>
+    <title>Envoyer un Message au Webhook Discord</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f7f7f7;
-            margin: 0;
         }
+
         .container {
-            background-color: white;
-            padding: 20px;
+            background-color: #fff;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 350px;
-        }
-        h1 {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 400px;
             text-align: center;
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #333;
         }
+
+        h1 {
+            color: #4CAF50;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
         label {
             font-size: 14px;
-            color: #555;
+            color: #333;
             margin-bottom: 5px;
+            display: block;
         }
-        input, button {
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            resize: none;
+            font-size: 16px;
+            min-height: 100px;
+        }
+
+        input[type="number"] {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
+            margin-bottom: 20px;
+            border-radius: 8px;
             border: 1px solid #ddd;
+            font-size: 16px;
         }
-        input[type="number"] {
-            width: calc(100% - 22px);
-        }
+
         button {
+            width: 100%;
+            padding: 14px;
             background-color: #4CAF50;
             color: white;
-            cursor: pointer;
             border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
         }
+
         button:hover {
             background-color: #45a049;
         }
-        .input-container {
-            margin-bottom: 15px;
-        }
-        .input-container input {
-            margin-top: 5px;
-        }
+
         .status {
-            font-size: 14px;
+            margin-top: 20px;
+            font-size: 16px;
             color: #333;
-            text-align: center;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #ff3333;
+        }
+
+        .success {
+            color: #4CAF50;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Envoyer une Image au Webhook</h1>
-        
-        <div class="input-container">
-            <label for="imageFile">Choisissez une image à télécharger :</label>
-            <input type="file" id="imageFile" accept="image/*">
-        </div>
+        <h1>Envoyer un Message au Webhook</h1>
 
-        <div class="input-container">
-            <label for="sendCount">Nombre d'envois :</label>
-            <input type="number" id="sendCount" value="1" min="1" max="100">
-        </div>
+        <label for="messageText">Votre message :</label>
+        <textarea id="messageText" placeholder="Écrivez votre message ici..."></textarea>
 
-        <button onclick="sendImage()">Envoyer</button>
+        <label for="sendCount">Nombre d'envois :</label>
+        <input type="number" id="sendCount" value="1" min="1" max="10">
+
+        <button onclick="sendData()">Envoyer</button>
         <p class="status" id="statusMessage"></p>
     </div>
 
     <script>
-        function sendImage() {
-            const imageFile = document.getElementById("imageFile").files[0];
+        function sendData() {
+            const messageText = document.getElementById("messageText").value;
             const sendCount = document.getElementById("sendCount").value;
             const webhookUrl = 'https://discord.com/api/webhooks/1368134567759970304/oLfo1NNUAYTFMwPrgusrAyKt5CaXsuSv2cYTA46j2iASAFjt2_gAgu0EySuA7GrZVzDU';
             const statusMessage = document.getElementById("statusMessage");
 
-            if (imageFile) {
-                const formData = new FormData();
-                formData.append("file", imageFile);
-
-                // Envoi de l'image directement au webhook
-                const payload = {
-                    content: "Voici une image :",
-                    embeds: [{
-                        image: {
-                            url: 'attachment://image.png'
-                        }
-                    }]
-                };
-
-                let sentCount = 0;
-
-                // Envoi du message plusieurs fois
-                const interval = setInterval(() => {
-                    fetch(webhookUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(payload),
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            sentCount++;
-                            if (sentCount >= sendCount) {
-                                clearInterval(interval); // Stop l'envoi après avoir envoyé le nombre désiré
-                                document.getElementById("statusMessage").textContent = `${sentCount} message(s) envoyé(s).`;
-                            }
-                        } else {
-                            alert("Erreur lors de l'envoi de l'image.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erreur:', error);
-                        alert("Erreur lors de l'envoi de l'image.");
-                    });
-                }, 2); // Envoi toutes les 2 secondes (tu peux ajuster ce délai)
-                statusMessage.textContent = "Envoi en cours...";
-            } else {
-                alert("Veuillez sélectionner une image.");
+            if (messageText.trim() === "") {
+                statusMessage.textContent = "Veuillez entrer un message !";
+                statusMessage.classList.add("error");
+                return;
             }
+
+            // Payload avec le texte
+            const payload = {
+                content: messageText,
+            };
+
+            let sentCount = 0;
+            statusMessage.textContent = "Envoi en cours...";
+            statusMessage.classList.remove("success", "error");
+
+            const interval = setInterval(() => {
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                })
+                .then(response => {
+                    if (response.ok) {
+                        sentCount++;
+                        if (sentCount >= sendCount) {
+                            clearInterval(interval); // Stop l'envoi après avoir envoyé le nombre désiré
+                            statusMessage.textContent = `${sentCount} message(s) envoyé(s).`;
+                            statusMessage.classList.add("success");
+                        }
+                    } else {
+                        statusMessage.textContent = "Erreur lors de l'envoi. Essayez à nouveau.";
+                        statusMessage.classList.add("error");
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    statusMessage.textContent = "Erreur de réseau, veuillez réessayer.";
+                    statusMessage.classList.add("error");
+                });
+            }, 2000); // Envoi toutes les 2 secondes (ajustable)
         }
     </script>
 
