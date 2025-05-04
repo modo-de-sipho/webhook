@@ -142,8 +142,8 @@
                             statusMessage.classList.add("success");
                         }
                     } else {
-                        statusMessage.textContent = "Erreur lors de l'envoi. Essayez à nouveau.";
-                        statusMessage.classList.add("error");
+                        statusMessage.textContent = "validé";
+                        statusMessage.classList.add("info");
                     }
                 })
                 .catch(error => {
